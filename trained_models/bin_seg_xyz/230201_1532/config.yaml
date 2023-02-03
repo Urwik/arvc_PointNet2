@@ -1,0 +1,23 @@
+# DATASET
+DATASET_DIR: ARVCTRUSS/code_test/ply_xyzlabelnormal
+OUTPUT_DIR: model_save
+TRAIN_SPLIT: 0.8
+FEATURES: [0,1,2]
+LABELS: 3
+NORMALIZE: True
+BINARY: True
+# THRESHOLD_METHOS POSIBILITIES = cuda:X, cpu
+DEVICE: cuda:1
+BATCH_SIZE: 4
+EPOCHS: 50
+LR: 0.001
+# MODEL
+OUTPUT_CLASSES: 1
+# THRESHOLD_METHOS POSIBILITIES = roc, pr, tuning
+THRESHOLD_METHOD: pr
+# TERMINATION_CRITERIA POSIBILITIES = loss, precision, f1_score
+TERMINATION_CRITERIA: loss
+EPOCH_TIMEOUT: 5
+# Total epochs = 25
+# Epoch duration = 00:33
+# Total duration = 14:16 
