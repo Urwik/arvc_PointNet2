@@ -17,9 +17,9 @@ pycharm_projects_path = os.path.dirname(current_project_path)
 sys.path.append(current_project_path)
 sys.path.append(pycharm_projects_path)
 
+from models import arvc_pointnet2_bin_seg
 from arvc_Utils.Datasets import PLYDataset
 from arvc_Utils.pointcloudUtils import np2ply
-from models import arvc_pointnet2_bin_seg
 
 def test(device_, dataloader_, model_, loss_fn_):
     # TEST
@@ -30,7 +30,7 @@ def test(device_, dataloader_, model_, loss_fn_):
     with torch.no_grad():
         for batch, (data, label, filename_) in enumerate(dataloader_):
             data, label = data.to(device_, dtype=torch.float32), label.to(device_, dtype=torch.float32)
-            pred, m3x3, m64x64 = model_(data.transpose(1, 2))
+            pred, abstract = model_(data.transpose(1, 2))
             m = torch.nn.Sigmoid()
             pred = m(pred)
 
