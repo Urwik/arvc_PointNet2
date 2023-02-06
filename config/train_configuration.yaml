@@ -22,3 +22,11 @@ THRESHOLD_METHOD: pr
 TERMINATION_CRITERIA: precision
 EPOCH_TIMEOUT: 5
 # LOSS = BCELoss()
+
+test:
+  TEST_DIR: ARVCTRUSS/test/ply_xyzlabelnormal
+  DEVICE: cuda:1
+  BATCH_SIZE: 1
+  # RESULTS
+  SAVE_PRED_CLOUDS: False
+  PRED_CLOUDS_DIR: /home/arvc/PycharmProjects/arvc_PointNet/pred_clouds_xyzxnynzn

@@ -171,10 +171,7 @@ def compute_best_threshold(pred_, gt_):
 
 if __name__ == '__main__':
 
-    Files = ['xyz_f1_pr.yaml',
-             'xyzCurv_f1_pr.yaml',
-             'xyzCurv_bceLoss_pr.yaml',
-             'xyzNormals_f1_pr.yaml',
+    Files = ['xyzCurv_bceLoss_pr.yaml',
              'xyzNormals_bceLoss_pr.yaml']
 
     for configFile in Files:
