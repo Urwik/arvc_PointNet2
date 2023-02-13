@@ -20,7 +20,7 @@ sys.path.append(current_project_path)
 sys.path.append(pycharm_projects_path)
 
 from arvc_Utils.Datasets import PLYDataset
-from models import arvc_pointnet2_bin_seg
+from models import pointnet2_bin_seg
 
 
 def train(device_, train_loader_, model_, loss_fn_, optimizer_):
@@ -38,7 +38,7 @@ def train(device_, train_loader_, model_, loss_fn_, optimizer_):
         m = torch.nn.Sigmoid()
         pred = m(pred).squeeze()
 
-        avg_train_loss_ = loss_fn_(pred, label)
+        avg_train_loss_ = loss_fn_(pred, label, WEIGHTS)
         loss_lst.append(avg_train_loss_.item())
 
         optimizer_.zero_grad()
@@ -71,7 +71,7 @@ def valid(device_, dataloader_, model_, loss_fn_):
             m = torch.nn.Sigmoid()
             pred = m(pred).squeeze()
 
-            avg_loss = loss_fn_(pred, label)
+            avg_loss = loss_fn_(pred, label, WEIGHTS)
             loss_lst.append(avg_loss.item())
 
             trshld, pred_fix, avg_f1, avg_pre, avg_rec, conf_m = compute_metrics(label, pred)
@@ -171,7 +171,7 @@ def compute_best_threshold(pred_, gt_):
 
 if __name__ == '__main__':
 
-    Files = ['xyzNormals_bceLoss_pr.yaml']
+    Files = ['xyz_NLLLoss_pr.yaml']
 
     for configFile in Files:
         # HYPERPARAMETERS
@@ -235,6 +235,8 @@ if __name__ == '__main__':
                                    binary=BINARY,
                                    transform=None)
 
+        WEIGHTS = torch.Tensor(train_dataset.weights).to(DEVICE)
+
         if USE_VALID_DATA:
             valid_dataset = PLYDataset(root_dir=VALID_DATA,
                                        features=FEATURES,
@@ -258,9 +260,9 @@ if __name__ == '__main__':
         # ---------------------------------------------------------------------------------------------------------------- #
         # SELECT MODEL
         device = torch.device(DEVICE)
-        model = arvc_pointnet2_bin_seg.get_model(num_classes=OUTPUT_CLASSES,
+        model = pointnet2_bin_seg.get_model(num_classes=OUTPUT_CLASSES,
                                                  n_feat=len(FEATURES)).to(device)
-        loss_fn = torch.nn.BCELoss()
+        loss_fn = pointnet2_bin_seg.get_loss()
         optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 
         # ---------------------------------------------------------------------------------------------------------------- #

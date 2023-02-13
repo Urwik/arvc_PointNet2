@@ -6,6 +6,7 @@ import sklearn.metrics as metrics
 import sys
 import socket
 import yaml
+from tqdm import tqdm
 from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
@@ -28,11 +29,12 @@ def test(device_, dataloader_, model_, loss_fn_):
     current_clouds = 0
 
     with torch.no_grad():
-        for batch, (data, label, filename_) in enumerate(dataloader_):
+        for batch, (data, label, filename_) in enumerate(tqdm(dataloader_)):
             data, label = data.to(device_, dtype=torch.float32), label.to(device_, dtype=torch.float32)
             pred, abstract = model_(data.transpose(1, 2))
             m = torch.nn.Sigmoid()
             pred = m(pred)
+            pred = torch.squeeze(pred, 0)
 
             avg_loss = loss_fn_(pred, label)
             loss_lst.append(avg_loss.item())
@@ -46,14 +48,14 @@ def test(device_, dataloader_, model_, loss_fn_):
             if SAVE_PRED_CLOUDS:
                 save_pred_as_ply(data, pred_fix, PRED_CLOUDS_DIR, filename_)
 
-            current_clouds += data.size(0)
-
-            if batch % 1 == 0 or data.size()[0] < dataloader_.batch_size:  # print every 10 batches
-                print(f'  [Batch: {current_clouds}/{len(dataloader_.dataset)}],'
-                      f'  [File: {str(filename_)}],'
-                      f'  [F1 score: {avg_f1:.4f}],'
-                      f'  [Precision score: {avg_pre:.4f}],'
-                      f'  [Recall score: {avg_rec:.4f}]')
+            # current_clouds += data.size(0)
+            #
+            # if batch % 1 == 0 or data.size()[0] < dataloader_.batch_size:  # print every 10 batches
+            #     print(f'  [Batch: {current_clouds}/{len(dataloader_.dataset)}],'
+            #           f'  [File: {str(filename_)}],'
+            #           f'  [F1 score: {avg_f1:.4f}],'
+            #           f'  [Precision score: {avg_pre:.4f}],'
+            #           f'  [Recall score: {avg_rec:.4f}]')
 
     return loss_lst, f1_lst, pre_lst, rec_lst, conf_m_lst
 
@@ -114,10 +116,10 @@ def save_pred_as_ply(data_, pred_fix_, output_dir_, filename_):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    feat_xyzlabel = [('x', 'f4'), ('y', 'f4'), ('z', 'f4'), ('nx', 'f4'), ('ny', 'f4'), ('nz', 'f4'), ('label', 'u4')]
+    feat_xyzlabel = [('x', 'f4'), ('y', 'f4'), ('z', 'f4'), ('label', 'u4')]
 
     for i in range(batch_size):
-        xyz = data_[i][:, [0,1,2,3,4,5]]
+        xyz = data_[i][:, [0,1,2]]
         actual_pred = pred_fix_[i].reshape(n_points, 1)
         cloud = np.hstack((xyz, actual_pred))
         filename = filename_[0]
@@ -129,32 +131,42 @@ if __name__ == '__main__':
 
     # --------------------------------------------------------------------------------------------#
     # GET CONFIGURATION PARAMETERS
-    CONFIG_FILE = 'test_configuration.yaml'
-    config_file_abs_path = os.path.join(current_project_path, 'config', CONFIG_FILE)
+    # CONFIG_FILE = 'test_configuration.yaml'
+    # MODEL_DIR = '230203_1433'
+    MODEL_DIR = '230204_0120'
+
+    config_file_abs_path = os.path.join(current_project_path, 'model_save', MODEL_DIR, 'config.yaml')
     with open(config_file_abs_path) as file:
         config = yaml.safe_load(file)
 
     # DATASET
-    TEST_DIR= config["TEST_DIR"]
+    TEST_DIR= config["test"]["TEST_DIR"]
     FEATURES= config["FEATURES"]
     LABELS= config["LABELS"]
     NORMALIZE= config["NORMALIZE"]
     BINARY= config["BINARY"]
     # THRESHOLD_METHOS POSIBILITIES = cuda:X, cpu
-    DEVICE= config["DEVICE"]
-    BATCH_SIZE= config["BATCH_SIZE"]
+    DEVICE= config["test"]["DEVICE"]
+    BATCH_SIZE= config["test"]["BATCH_SIZE"]
     # MODEL
-    MODEL_PATH= config["MODEL_PATH"]
+    MODEL_PATH= os.path.join(current_project_path, 'model_save', MODEL_DIR)
     # THRESHOLD= config["THRESHOLD"]
     OUTPUT_CLASSES= config["OUTPUT_CLASSES"]
     # LOSS = BCELoss()
     # RESULTS
-    SAVE_PRED_CLOUDS= config["SAVE_PRED_CLOUDS"]
-    PRED_CLOUDS_DIR= config["PRED_CLOUDS_DIR"]
+    SAVE_PRED_CLOUDS= config["test"]["SAVE_PRED_CLOUDS"]
+    PRED_CLOUDS_DIR= config["test"]["PRED_CLOUDS_DIR"]
 
     # --------------------------------------------------------------------------------------------#
+    # CHANGE PATH DEPENDING ON MACHINE
+    machine_name = socket.gethostname()
+    if machine_name == 'arvc-Desktop':
+        TEST_DATA = os.path.join('/media/arvc/data/datasets', TEST_DIR)
+    else:
+        TEST_DATA = os.path.join('/home/arvc/Fran/data/datasets', TEST_DIR)
+    # --------------------------------------------------------------------------------------------#
     # INSTANCE DATASET
-    dataset = PLYDataset(root_dir = TEST_DIR,
+    dataset = PLYDataset(root_dir = TEST_DATA,
                          features= FEATURES,
                          labels = LABELS,
                          normalize = NORMALIZE,

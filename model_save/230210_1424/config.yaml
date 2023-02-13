@@ -1,11 +1,11 @@
 # DATASET
-TRAIN_DIR: ARVCTRUSS/train/ply_xyzlabelnormal
+TRAIN_DIR: ARVCTRUSS/code_test/ply_xyzlabelnormal
 VALID_DIR: ARVCTRUSS/valid/ply_xyzlabelnormal
 # IF USE_VALID_DATA set to False TRAIN_DATA will be split using TRAIN_SPLIT
 USE_VALID_DATA: False
 TRAIN_SPLIT: 0.8
 OUTPUT_DIR: model_save
-FEATURES: [0,1,2,4,5,6]
+FEATURES: [0,1,2]
 LABELS: 3
 NORMALIZE: True
 BINARY: True
