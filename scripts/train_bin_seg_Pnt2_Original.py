@@ -23,7 +23,7 @@ from arvc_Utils.Datasets import PLYDataset
 from models import pointnet2_bin_seg
 
 
-def train(device_, train_loader_, model_, loss_fn_, optimizer_):
+def train(device_, train_loader_, model_, loss_fn_, optimizer_, weights_):
     loss_lst = []
     current_clouds = 0
 
@@ -33,12 +33,12 @@ def train(device_, train_loader_, model_, loss_fn_, optimizer_):
     print('-'*50)
     model_.train()
     for batch, (data, label, _) in enumerate(train_loader_):
-        data, label = data.to(device_, dtype=torch.float32), label.to(device_, dtype=torch.float32)
+        data, label = data.to(device_, dtype=torch.float32), label.to(device_, dtype=torch.int64)
         pred, abstract_points = model_(data.transpose(1, 2))
-        m = torch.nn.Sigmoid()
-        pred = m(pred).squeeze()
+        pred = pred.reshape((train_loader_.batch_size * 25000, 2))
+        label = label.flatten()
 
-        avg_train_loss_ = loss_fn_(pred, label, WEIGHTS)
+        avg_train_loss_ = loss_fn_(pred, label, weights_)
         loss_lst.append(avg_train_loss_.item())
 
         optimizer_.zero_grad()
@@ -47,35 +47,36 @@ def train(device_, train_loader_, model_, loss_fn_, optimizer_):
 
         current_clouds += data.size(0)
 
-        if batch % 10 == 0 or data.size(0) < train_loader_.batch_size:  # print every (% X) batches
+        if batch % 1 == 0 or data.size(0) < train_loader_.batch_size:  # print every (% X) batches
             print(f' - [Batch: {current_clouds}/{len(train_loader_.dataset)}],'
                   f' / Train Loss: {avg_train_loss_:.4f}')
 
     return loss_lst
 
 
-def valid(device_, dataloader_, model_, loss_fn_):
+def valid(device_, dataloader_, model_, loss_fn_, weights_):
 
     # VALIDATION
     print('-' * 50)
     print('VALIDATION')
     print('-'*50)
     model_.eval()
-    f1_lst, pre_lst, rec_lst, loss_lst, conf_m_lst, trshld_lst = [], [], [], [], [], []
+    f1_lst, pre_lst, rec_lst, loss_lst, conf_m_lst = [], [], [], [], []
     current_clouds = 0
 
     with torch.no_grad():
         for batch, (data, label, _) in enumerate(dataloader_):
-            data, label = data.to(device_, dtype=torch.float32), label.to(device_, dtype=torch.float32)
+            data, label = data.to(device_, dtype=torch.float32), label.to(device_, dtype=torch.int64)
             pred, abstract_points = model_(data.transpose(1, 2))
-            m = torch.nn.Sigmoid()
-            pred = m(pred).squeeze()
+            pred_fix = torch.argmax(pred, dim=2).flatten()
+            pred = pred.reshape((dataloader_.batch_size * 25000, 2))
+            label = label.flatten()
 
-            avg_loss = loss_fn_(pred, label, WEIGHTS)
+            avg_loss = loss_fn_(pred, label, weights_)
             loss_lst.append(avg_loss.item())
 
-            trshld, pred_fix, avg_f1, avg_pre, avg_rec, conf_m = compute_metrics(label, pred)
-            trshld_lst.append(trshld)
+            avg_f1, avg_pre, avg_rec, conf_m = compute_metrics(label, pred_fix)
+
             f1_lst.append(avg_f1)
             pre_lst.append(avg_pre)
             rec_lst.append(avg_rec)
@@ -83,59 +84,52 @@ def valid(device_, dataloader_, model_, loss_fn_):
 
             current_clouds += data.size(0)
 
-            if batch % 10 == 0 or data.size()[0] < dataloader_.batch_size:  # print every 10 batches
+            if batch % 1 == 0 or data.size()[0] < dataloader_.batch_size:  # print every 10 batches
                 print(f'  [Batch: {current_clouds}/{len(dataloader_.dataset)}]'
                       f'  [Loss: {avg_loss:.4f}]'
                       f'  [Precision: {avg_pre:.4f}]'
                       f'  [Recall: {avg_rec:.4f}'
                       f'  [F1 score: {avg_f1:.4f}]')
 
-    return loss_lst, f1_lst, pre_lst, rec_lst, conf_m_lst, trshld_lst
+    return loss_lst, f1_lst, pre_lst, rec_lst, conf_m_lst
 
 
 def compute_metrics(label_, pred_):
 
     pred = pred_.cpu().numpy()
     label = label_.cpu().numpy().astype(int)
-    trshld = compute_best_threshold(pred, label)
-    pred = np.where(pred > trshld, 1, 0).astype(int)
 
-    f1_score_list = []
-    precision_list = []
-    recall_list =  []
-    tn_list = []
-    fp_list = []
-    fn_list = []
-    tp_list = []
+    # f1_score_list = []
+    # precision_list = []
+    # recall_list =  []
+    # tn_list = []
+    # fp_list = []
+    # fn_list = []
+    # tp_list = []
 
-    batch_size = np.size(pred, 0)
-    for i in range(batch_size):
-        tmp_labl = label[i]
-        tmp_pred = pred[i]
+    f1_score = metrics.f1_score(label, pred)
+    precision_ = metrics.precision_score(label, pred)
+    recall_ = metrics.recall_score(label, pred)
+    tn, fp, fn, tp = metrics.confusion_matrix(label, pred, labels=[0,1]).ravel()
 
-        f1_score = metrics.f1_score(tmp_labl, tmp_pred, average='binary')
-        precision_ = metrics.precision_score(tmp_labl, tmp_pred)
-        recall_ = metrics.recall_score(tmp_labl, tmp_pred)
-        tn, fp, fn, tp = metrics.confusion_matrix(tmp_labl, tmp_pred, labels=[0,1]).ravel()
+    # tn_list.append(tn)
+    # fp_list.append(fp)
+    # fn_list.append(fn)
+    # tp_list.append(tp)
+    #
+    # f1_score_list.append(f1_score)
+    # precision_list.append(precision_)
+    # recall_list.append(recall_)
+    #
+    # avg_f1_score = np.mean(np.array(f1_score_list))
+    # avg_precision = np.mean(np.array(precision_list))
+    # avg_recall = np.mean(np.array(recall_list))
+    # avg_tn = np.mean(np.array(tn_list))
+    # avg_fp = np.mean(np.array(fp_list))
+    # avg_fn = np.mean(np.array(fn_list))
+    # avg_tp = np.mean(np.array(tp_list))
 
-        tn_list.append(tn)
-        fp_list.append(fp)
-        fn_list.append(fn)
-        tp_list.append(tp)
-
-        f1_score_list.append(f1_score)
-        precision_list.append(precision_)
-        recall_list.append(recall_)
-
-    avg_f1_score = np.mean(np.array(f1_score_list))
-    avg_precision = np.mean(np.array(precision_list))
-    avg_recall = np.mean(np.array(recall_list))
-    avg_tn = np.mean(np.array(tn_list))
-    avg_fp = np.mean(np.array(fp_list))
-    avg_fn = np.mean(np.array(fn_list))
-    avg_tp = np.mean(np.array(tp_list))
-
-    return trshld, pred, avg_f1_score, avg_precision, avg_recall, (avg_tn, avg_fp, avg_fn, avg_tp)
+    return f1_score, precision_, recall_, (tn, fp, fn, tp)
 
 
 def compute_best_threshold(pred_, gt_):
@@ -253,16 +247,16 @@ if __name__ == '__main__':
 
         # INSTANCE DATALOADERS
         train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, num_workers=10,
-                                      shuffle=True, pin_memory=True, drop_last=False)
+                                      shuffle=True, pin_memory=True, drop_last=True)
         valid_dataloader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, num_workers=10,
-                                      shuffle=True, pin_memory=True, drop_last=False)
+                                      shuffle=True, pin_memory=True, drop_last=True)
 
         # ---------------------------------------------------------------------------------------------------------------- #
         # SELECT MODEL
         device = torch.device(DEVICE)
         model = pointnet2_bin_seg.get_model(num_classes=OUTPUT_CLASSES,
                                                  n_feat=len(FEATURES)).to(device)
-        loss_fn = pointnet2_bin_seg.get_loss()
+        loss_fn = pointnet2_bin_seg.get_loss().to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 
         # ---------------------------------------------------------------------------------------------------------------- #
@@ -285,12 +279,14 @@ if __name__ == '__main__':
                                   train_loader_=train_dataloader,
                                   model_=model,
                                   loss_fn_=loss_fn,
-                                  optimizer_=optimizer)
+                                  optimizer_=optimizer,
+                                  weights_=WEIGHTS)
 
             valid_results = valid(device_=device,
                                   dataloader_=valid_dataloader,
                                   model_=model,
-                                  loss_fn_=loss_fn)
+                                  loss_fn_=loss_fn,
+                                  weights_=WEIGHTS)
 
             # GET RESULTS
             train_loss.append(train_results)
@@ -299,7 +295,7 @@ if __name__ == '__main__':
             precision.append(valid_results[2])
             recall.append(valid_results[3])
             conf_matrix.append(valid_results[4])
-            threshold.append(valid_results[5])
+            # threshold.append(valid_results[5])
 
             print('-' * 50)
             print('DURATION:')
@@ -350,7 +346,7 @@ if __name__ == '__main__':
         np.save(OUT_DIR + f'/precision', np.array(precision))
         np.save(OUT_DIR + f'/recall', np.array(recall))
         np.save(OUT_DIR + f'/conf_matrix', np.array(conf_matrix))
-        np.save(OUT_DIR + f'/threshold', np.array(threshold))
+        # np.save(OUT_DIR + f'/threshold', np.array(threshold))
 
         end_time = datetime.now()
         print('Total Training Duration: {}'.format(end_time-start_time))
