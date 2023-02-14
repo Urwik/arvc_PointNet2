@@ -105,16 +105,10 @@ def compute_metrics(label_, pred_):
     return pred, avg_f1_score, avg_precision, avg_recall, (avg_tn, avg_fp, avg_fn, avg_tp)
 
 
-def save_pred_as_ply(data_, pred_fix_, output_dir_, filename_):
+def save_pred_as_ply(data_, pred_fix_, out_dir_, filename_):
     data_ = data_.detach().cpu().numpy()
     batch_size = np.size(data_, 0)
     n_points = np.size(data_, 1)
-
-    date = datetime.today().strftime('%y%m%d_%H%M')
-    out_dir = os.path.join(output_dir_, date)
-
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
 
     feat_xyzlabel = [('x', 'f4'), ('y', 'f4'), ('z', 'f4'), ('label', 'u4')]
 
@@ -123,7 +117,7 @@ def save_pred_as_ply(data_, pred_fix_, output_dir_, filename_):
         actual_pred = pred_fix_[i].reshape(n_points, 1)
         cloud = np.hstack((xyz, actual_pred))
         filename = filename_[0]
-        np2ply(cloud, out_dir, filename, features=feat_xyzlabel, binary=True)
+        np2ply(cloud, out_dir_, filename, features=feat_xyzlabel, binary=True)
 
 
 if __name__ == '__main__':
@@ -155,7 +149,7 @@ if __name__ == '__main__':
     # LOSS = BCELoss()
     # RESULTS
     SAVE_PRED_CLOUDS= config["test"]["SAVE_PRED_CLOUDS"]
-    PRED_CLOUDS_DIR= config["test"]["PRED_CLOUDS_DIR"]
+    # PRED_CLOUDS_DIR= config["test"]["PRED_CLOUDS_DIR"]
 
     # --------------------------------------------------------------------------------------------#
     # CHANGE PATH DEPENDING ON MACHINE
@@ -181,6 +175,12 @@ if __name__ == '__main__':
     model = arvc_pointnet2_bin_seg.get_model(num_classes=OUTPUT_CLASSES,
                                              n_feat=len(FEATURES)).to(device)
     loss_fn = torch.nn.BCELoss()
+
+
+    # MAKE DIR WHERE TO SAVE THE CLOUDS
+    PRED_CLOUDS_DIR = os.path.join(MODEL_PATH, "pred_clouds")
+    if not os.path.exists(PRED_CLOUDS_DIR):
+        os.makedirs(PRED_CLOUDS_DIR)
 
     # LOAD TRAINED MODEL
     model.load_state_dict(torch.load(os.path.join(MODEL_PATH, 'best_model.pth'), map_location=device))

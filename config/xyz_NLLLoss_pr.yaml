@@ -1,5 +1,5 @@
 # DATASET
-TRAIN_DIR: ARVCTRUSS/code_test/ply_xyzlabelnormal
+TRAIN_DIR: ARVCTRUSS/train/ply_xyzlabelnormal
 VALID_DIR: ARVCTRUSS/valid/ply_xyzlabelnormal
 # IF USE_VALID_DATA set to False TRAIN_DATA will be split using TRAIN_SPLIT
 USE_VALID_DATA: False

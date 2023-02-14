@@ -219,7 +219,17 @@ if __name__ == '__main__':
         # --------------------------------------------------------------------------------------------#
         # CREATE A FOLDER TO SAVE TRAINING
         OUT_DIR = os.path.join(current_project_path, OUTPUT_DIR)
-        folder_name = datetime.today().strftime('%y%m%d_%H%M')
+        input_features = ""
+        if FEATURES == [0,1,2]:
+            input_features = "xyz"
+        elif FEATURES == [0,1,2,7]:
+            input_features = "xyzc"
+        elif FEATURES == [0,1,2,4,5,6]:
+            input_features = "xyzn"
+        else:
+            input_features = "???"
+
+        folder_name ="bs" + '_' + input_features + '_' + datetime.today().strftime('%y%m%d%H%M')
         OUT_DIR = os.path.join(OUT_DIR, folder_name)
         if not os.path.exists(OUT_DIR):
             os.makedirs(OUT_DIR)

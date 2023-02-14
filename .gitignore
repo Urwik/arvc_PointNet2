@@ -1,3 +1,5 @@
 venv/
 trained_models/
 model_save/
+__pycache__/
+test_results/
