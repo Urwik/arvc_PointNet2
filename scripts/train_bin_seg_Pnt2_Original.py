@@ -34,11 +34,12 @@ def train(device_, train_loader_, model_, loss_fn_, optimizer_, weights_):
     model_.train()
     for batch, (data, label, _) in enumerate(train_loader_):
         data, label = data.to(device_, dtype=torch.float32), label.to(device_, dtype=torch.int64)
-        pred, abstract_points = model_(data.transpose(1, 2))
-        pred = pred.reshape((train_loader_.batch_size * 25000, 2))
+        pred_prob, abstract_points = model_(data.transpose(1, 2))
+        pred_prob = pred_prob.flatten(start_dim=0, end_dim=1)
+
         label = label.flatten()
 
-        avg_train_loss_ = loss_fn_(pred, label, weights_)
+        avg_train_loss_ = loss_fn_(pred_prob, label, weights_)
         loss_lst.append(avg_train_loss_.item())
 
         optimizer_.zero_grad()
@@ -67,15 +68,16 @@ def valid(device_, dataloader_, model_, loss_fn_, weights_):
     with torch.no_grad():
         for batch, (data, label, _) in enumerate(dataloader_):
             data, label = data.to(device_, dtype=torch.float32), label.to(device_, dtype=torch.int64)
-            pred, abstract_points = model_(data.transpose(1, 2))
-            pred_fix = torch.argmax(pred, dim=2).flatten()
-            pred = pred.reshape((dataloader_.batch_size * 25000, 2))
+            pred_prob, abstract_points = model_(data.transpose(1, 2))
+            pred_prob = pred_prob.flatten(start_dim=0, end_dim=1) # NLLLoss no se le pueden pasar batches
+            pred_label = torch.argmax(pred_prob, dim=1).flatten()
+
             label = label.flatten()
 
-            avg_loss = loss_fn_(pred, label, weights_)
+            avg_loss = loss_fn_(pred_prob, label, weights_)
             loss_lst.append(avg_loss.item())
 
-            avg_f1, avg_pre, avg_rec, conf_m = compute_metrics(label, pred_fix)
+            avg_f1, avg_pre, avg_rec, conf_m = compute_metrics(label, pred_label)
 
             f1_lst.append(avg_f1)
             pre_lst.append(avg_pre)
@@ -94,40 +96,15 @@ def valid(device_, dataloader_, model_, loss_fn_, weights_):
     return loss_lst, f1_lst, pre_lst, rec_lst, conf_m_lst
 
 
-def compute_metrics(label_, pred_):
+def compute_metrics(label, pred):
 
-    pred = pred_.cpu().numpy()
-    label = label_.cpu().numpy().astype(int)
-
-    # f1_score_list = []
-    # precision_list = []
-    # recall_list =  []
-    # tn_list = []
-    # fp_list = []
-    # fn_list = []
-    # tp_list = []
+    # pred = pred_.cpu().numpy()
+    # label = label_.cpu().numpy().astype(int)
 
     f1_score = metrics.f1_score(label, pred)
     precision_ = metrics.precision_score(label, pred)
     recall_ = metrics.recall_score(label, pred)
     tn, fp, fn, tp = metrics.confusion_matrix(label, pred, labels=[0,1]).ravel()
-
-    # tn_list.append(tn)
-    # fp_list.append(fp)
-    # fn_list.append(fn)
-    # tp_list.append(tp)
-    #
-    # f1_score_list.append(f1_score)
-    # precision_list.append(precision_)
-    # recall_list.append(recall_)
-    #
-    # avg_f1_score = np.mean(np.array(f1_score_list))
-    # avg_precision = np.mean(np.array(precision_list))
-    # avg_recall = np.mean(np.array(recall_list))
-    # avg_tn = np.mean(np.array(tn_list))
-    # avg_fp = np.mean(np.array(fp_list))
-    # avg_fn = np.mean(np.array(fn_list))
-    # avg_tp = np.mean(np.array(tp_list))
 
     return f1_score, precision_, recall_, (tn, fp, fn, tp)
 
