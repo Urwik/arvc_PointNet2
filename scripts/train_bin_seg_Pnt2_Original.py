@@ -190,14 +190,24 @@ if __name__ == '__main__':
         # --------------------------------------------------------------------------------------------#
         # CREATE A FOLDER TO SAVE TRAINING
         OUT_DIR = os.path.join(current_project_path, OUTPUT_DIR)
-        folder_name = datetime.today().strftime('%y%m%d_%H%M')
+        input_features = ""
+        if FEATURES == [0,1,2]:
+            input_features = "xyz"
+        elif FEATURES == [0,1,2,7]:
+            input_features = "xyzc"
+        elif FEATURES == [0,1,2,4,5,6]:
+            input_features = "xyzn"
+        else:
+            input_features = "???"
+
+        folder_name = "bs" + '_' + input_features + '_' + datetime.today().strftime('%y%m%d%H%M')
         OUT_DIR = os.path.join(OUT_DIR, folder_name)
         if not os.path.exists(OUT_DIR):
             os.makedirs(OUT_DIR)
 
         shutil.copyfile(config_file_abs_path, os.path.join(OUT_DIR, 'config.yaml'))
 
-        # ---------------------------------------------------------------------------------------------------------------- #
+        # ------------------------------------------------------------------------------------------------------------ #
         # INSTANCE DATASET
         train_dataset = PLYDataset(root_dir=TRAIN_DATA,
                                    features=FEATURES,
@@ -228,7 +238,7 @@ if __name__ == '__main__':
         valid_dataloader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, num_workers=10,
                                       shuffle=True, pin_memory=True, drop_last=True)
 
-        # ---------------------------------------------------------------------------------------------------------------- #
+        # ------------------------------------------------------------------------------------------------------------ #
         # SELECT MODEL
         device = torch.device(DEVICE)
         model = pointnet2_bin_seg.get_model(num_classes=OUTPUT_CLASSES,
@@ -236,8 +246,8 @@ if __name__ == '__main__':
         loss_fn = pointnet2_bin_seg.get_loss().to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 
-        # ---------------------------------------------------------------------------------------------------------------- #
-        # --- TRAIN LOOP ------------------------------------------------------------------------------------------------- #
+        # ------------------------------------------------------------------------------------------------------------ #
+        # --- TRAIN LOOP --------------------------------------------------------------------------------------------- #
         print('TRAINING ON: ', device)
         epoch_timeout_count = 0
 
@@ -272,7 +282,6 @@ if __name__ == '__main__':
             precision.append(valid_results[2])
             recall.append(valid_results[3])
             conf_matrix.append(valid_results[4])
-            # threshold.append(valid_results[5])
 
             print('-' * 50)
             print('DURATION:')
@@ -323,7 +332,6 @@ if __name__ == '__main__':
         np.save(OUT_DIR + f'/precision', np.array(precision))
         np.save(OUT_DIR + f'/recall', np.array(recall))
         np.save(OUT_DIR + f'/conf_matrix', np.array(conf_matrix))
-        # np.save(OUT_DIR + f'/threshold', np.array(threshold))
 
         end_time = datetime.now()
         print('Total Training Duration: {}'.format(end_time-start_time))

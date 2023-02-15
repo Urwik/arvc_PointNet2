@@ -171,7 +171,7 @@ def compute_best_threshold(pred_, gt_):
 
 if __name__ == '__main__':
 
-    Files = ['xyzNormals_bceLoss_pr.yaml']
+    Files = ['xyz_bceloss_pr.yaml']
 
     for configFile in Files:
         # HYPERPARAMETERS
@@ -229,7 +229,7 @@ if __name__ == '__main__':
         else:
             input_features = "???"
 
-        folder_name ="bs" + '_' + input_features + '_' + datetime.today().strftime('%y%m%d%H%M')
+        folder_name = "bs" + '_' + input_features + '_' + datetime.today().strftime('%y%m%d%H%M')
         OUT_DIR = os.path.join(OUT_DIR, folder_name)
         if not os.path.exists(OUT_DIR):
             os.makedirs(OUT_DIR)
