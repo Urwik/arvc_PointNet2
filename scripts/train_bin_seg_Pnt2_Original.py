@@ -98,8 +98,8 @@ def valid(device_, dataloader_, model_, loss_fn_, weights_):
 
 def compute_metrics(label, pred):
 
-    # pred = pred_.cpu().numpy()
-    # label = label_.cpu().numpy().astype(int)
+    pred = pred.cpu().numpy()
+    label = label.cpu().numpy().astype(int)
 
     f1_score = metrics.f1_score(label, pred)
     precision_ = metrics.precision_score(label, pred)
