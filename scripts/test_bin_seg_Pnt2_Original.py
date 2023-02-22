@@ -85,7 +85,7 @@ def save_pred_as_ply(data_, pred_fix_, out_dir_, filename_):
 
     for i in range(batch_size):
         xyz = data_[i][:, [0,1,2]]
-        actual_pred = pred_fix_[i].reshape(n_points, 1)
+        actual_pred = pred_fix_[:,None]
         cloud = np.hstack((xyz, actual_pred))
         filename = filename_[0]
         np2ply(cloud, out_dir_, filename, features=feat_xyzlabel, binary=True)
