@@ -20,7 +20,7 @@ sys.path.append(current_project_path)
 sys.path.append(pycharm_projects_path)
 
 from arvc_Utils.Datasets import PLYDataset
-from models import arvc_pointnet2_bin_seg
+from models import arvc_pointnet2_bin_seg_gf_ransac
 
 
 def train(device_, train_loader_, model_, loss_fn_, optimizer_):
@@ -37,6 +37,7 @@ def train(device_, train_loader_, model_, loss_fn_, optimizer_):
         pred, abstract_points = model_(data.transpose(1, 2))
         m = torch.nn.Sigmoid()
         pred = m(pred).squeeze()
+        label = label.squeeze()
 
         avg_train_loss_ = loss_fn_(pred, label)
         loss_lst.append(avg_train_loss_.item())
@@ -70,6 +71,7 @@ def valid(device_, dataloader_, model_, loss_fn_):
             pred, abstract_points = model_(data.transpose(1, 2))
             m = torch.nn.Sigmoid()
             pred = m(pred).squeeze()
+            label = label.squeeze()
 
             avg_loss = loss_fn_(pred, label)
             loss_lst.append(avg_loss.item())
@@ -171,7 +173,7 @@ def compute_best_threshold(pred_, gt_):
 
 if __name__ == '__main__':
 
-    Files = ['xyz_bceloss_pr.yaml']
+    Files = ['train_configuration.yaml']
 
     for configFile in Files:
         # HYPERPARAMETERS
@@ -266,7 +268,7 @@ if __name__ == '__main__':
         # ---------------------------------------------------------------------------------------------------------------- #
         # SELECT MODEL
         device = torch.device(DEVICE)
-        model = arvc_pointnet2_bin_seg.get_model(num_classes=OUTPUT_CLASSES,
+        model = arvc_pointnet2_bin_seg_gf_ransac.get_model(num_classes=OUTPUT_CLASSES,
                                                  n_feat=len(FEATURES)).to(device)
         loss_fn = torch.nn.BCELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=LR)
