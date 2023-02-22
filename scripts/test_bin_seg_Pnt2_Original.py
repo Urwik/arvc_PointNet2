@@ -78,7 +78,10 @@ def compute_metrics(label, pred):
 
 def save_pred_as_ply(data_, pred_fix_, out_dir_, filename_):
     data_ = data_.detach().cpu().numpy()
+<<<<<<< HEAD
     pred_fix_ = pred_fix_.detach().cpu().numpy()
+=======
+>>>>>>> 491f9ee1967393de68563bf26e326c4286d5141c
     batch_size = np.size(data_, 0)
     n_points = np.size(data_, 1)
 
@@ -86,9 +89,14 @@ def save_pred_as_ply(data_, pred_fix_, out_dir_, filename_):
 
     for i in range(batch_size):
         xyz = data_[i][:, [0,1,2]]
+<<<<<<< HEAD
         actual_pred = pred_fix_[:,None]
         cloud = np.hstack((xyz, actual_pred))
         # cloud = np.row_stack((xyz, actual_pred))
+=======
+        actual_pred = pred_fix_[i].reshape(n_points, 1)
+        cloud = np.hstack((xyz, actual_pred))
+>>>>>>> 491f9ee1967393de68563bf26e326c4286d5141c
         filename = filename_[0]
         np2ply(cloud, out_dir_, filename, features=feat_xyzlabel, binary=True)
 
@@ -98,7 +106,11 @@ if __name__ == '__main__':
 
     # --------------------------------------------------------------------------------------------#
     # GET CONFIGURATION PARAMETERS
+<<<<<<< HEAD
     MODEL_DIR = 'bs_xyz_2302151139/'
+=======
+    MODEL_DIR = '230204_0120'
+>>>>>>> 491f9ee1967393de68563bf26e326c4286d5141c
 
     config_file_abs_path = os.path.join(current_project_path, 'model_save', MODEL_DIR, 'config.yaml')
     with open(config_file_abs_path) as file:
