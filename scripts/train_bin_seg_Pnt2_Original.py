@@ -48,7 +48,7 @@ def train(device_, train_loader_, model_, loss_fn_, optimizer_, weights_):
 
         current_clouds += data.size(0)
 
-        if batch % 1 == 0 or data.size(0) < train_loader_.batch_size:  # print every (% X) batches
+        if batch % 10 == 0 or data.size(0) < train_loader_.batch_size:  # print every (% X) batches
             print(f' - [Batch: {current_clouds}/{len(train_loader_.dataset)}],'
                   f' / Train Loss: {avg_train_loss_:.4f}')
 
@@ -86,7 +86,7 @@ def valid(device_, dataloader_, model_, loss_fn_, weights_):
 
             current_clouds += data.size(0)
 
-            if batch % 1 == 0 or data.size()[0] < dataloader_.batch_size:  # print every 10 batches
+            if batch % 10 == 0 or data.size()[0] < dataloader_.batch_size:  # print every 10 batches
                 print(f'  [Batch: {current_clouds}/{len(dataloader_.dataset)}]'
                       f'  [Loss: {avg_loss:.4f}]'
                       f'  [Precision: {avg_pre:.4f}]'
@@ -98,8 +98,8 @@ def valid(device_, dataloader_, model_, loss_fn_, weights_):
 
 def compute_metrics(label, pred):
 
-    # pred = pred_.cpu().numpy()
-    # label = label_.cpu().numpy().astype(int)
+    pred = pred.cpu().numpy()
+    label = label.cpu().numpy().astype(int)
 
     f1_score = metrics.f1_score(label, pred)
     precision_ = metrics.precision_score(label, pred)
