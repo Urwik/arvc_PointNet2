@@ -90,11 +90,15 @@ def save_pred_as_ply(data_, pred_fix_, out_dir_, filename_):
     for i in range(batch_size):
         xyz = data_[i][:, [0,1,2]]
 <<<<<<< HEAD
+<<<<<<< HEAD
         actual_pred = pred_fix_[:,None]
         cloud = np.hstack((xyz, actual_pred))
         # cloud = np.row_stack((xyz, actual_pred))
 =======
         actual_pred = pred_fix_[i].reshape(n_points, 1)
+=======
+        actual_pred = pred_fix_[:,None]
+>>>>>>> 24c31133744b8b42214ac36e8cdb95c0f88c9dd8
         cloud = np.hstack((xyz, actual_pred))
 >>>>>>> 491f9ee1967393de68563bf26e326c4286d5141c
         filename = filename_[0]
