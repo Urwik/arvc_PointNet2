@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     # --------------------------------------------------------------------------------------------#
     # GET CONFIGURATION PARAMETERS
-    MODEL_DIR = 'bs_xyz_2302151139/'
+    MODEL_DIR = 'bs_xyz_bce_vf_loss/'
 
     config_file_abs_path = os.path.join(current_project_path, 'model_save', MODEL_DIR, 'config.yaml')
     with open(config_file_abs_path) as file:

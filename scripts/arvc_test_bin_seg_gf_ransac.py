@@ -22,6 +22,7 @@ from models import arvc_pointnet2_bin_seg
 from arvc_Utils.Datasets import PLYDataset
 from arvc_Utils.pointcloudUtils import np2ply
 
+
 def test(device_, dataloader_, model_, loss_fn_):
     # TEST
     model_.eval()
@@ -35,6 +36,8 @@ def test(device_, dataloader_, model_, loss_fn_):
             m = torch.nn.Sigmoid()
             pred = m(pred)
             pred = torch.squeeze(pred, 0)
+            pred = pred.squeeze()
+            label = label.squeeze()
 
             avg_loss = loss_fn_(pred, label)
             loss_lst.append(avg_loss.item())
@@ -63,47 +66,17 @@ def test(device_, dataloader_, model_, loss_fn_):
 
 def compute_metrics(label_, pred_):
 
-    pred = pred_.cpu().numpy()
-    label = label_.cpu().numpy().astype(int)
+    pred = pred_.detach().cpu().numpy()
+    label = label_.detach().cpu().numpy().astype(int)
     trshld = THRESHOLD
     pred = np.where(pred > trshld, 1, 0).astype(int)
 
-    f1_score_list = []
-    precision_list = []
-    recall_list =  []
-    tn_list = []
-    fp_list = []
-    fn_list = []
-    tp_list = []
+    f1_score_ = metrics.f1_score(label, pred, average='binary')
+    precision_ = metrics.precision_score(label, pred)
+    recall_ = metrics.recall_score(label, pred)
+    tn, fp, fn, tp = metrics.confusion_matrix(label, pred, labels=[0, 1]).ravel()
 
-    batch_size = np.size(pred, 0)
-    for i in range(batch_size):
-        tmp_labl = label[i]
-        tmp_pred = pred[i]
-
-        f1_score = metrics.f1_score(tmp_labl, tmp_pred, average='binary')
-        precision = metrics.precision_score(tmp_labl, tmp_pred, average='binary')
-        recall = metrics.recall_score(tmp_labl, tmp_pred, average='binary')
-        tn, fp, fn, tp = metrics.confusion_matrix(tmp_labl, tmp_pred, labels=[0,1]).ravel()
-
-        tn_list.append(tn)
-        fp_list.append(fp)
-        fn_list.append(fn)
-        tp_list.append(tp)
-
-        f1_score_list.append(f1_score)
-        precision_list.append(precision)
-        recall_list.append(recall)
-
-    avg_f1_score = np.mean(np.array(f1_score_list))
-    avg_precision = np.mean(np.array(precision_list))
-    avg_recall = np.mean(np.array(recall_list))
-    avg_tn = np.mean(np.array(tn_list))
-    avg_fp = np.mean(np.array(fp_list))
-    avg_fn = np.mean(np.array(fn_list))
-    avg_tp = np.mean(np.array(tp_list))
-
-    return pred, avg_f1_score, avg_precision, avg_recall, (avg_tn, avg_fp, avg_fn, avg_tp)
+    return pred, f1_score_, precision_, recall_, (tn, fp, fn, tp)
 
 
 def save_pred_as_ply(data_, pred_fix_, out_dir_, filename_):
@@ -115,7 +88,7 @@ def save_pred_as_ply(data_, pred_fix_, out_dir_, filename_):
 
     for i in range(batch_size):
         xyz = data_[i][:, [0,1,2]]
-        actual_pred = pred_fix_[i].reshape(n_points, 1)
+        actual_pred = pred_fix_[:,None]
         cloud = np.hstack((xyz, actual_pred))
         filename = filename_[0]
         np2ply(cloud, out_dir_, filename, features=feat_xyzlabel, binary=True)
@@ -147,7 +120,6 @@ def get_representative_clouds(f1_score_, precision_, recall_, files_list_):
     print(f'Max recall cloud: {files_list_[max_rec_idx]}')
     print(f'Min recall cloud: {files_list_[min_rec_idx]}')
 
-
 if __name__ == '__main__':
     start_time = datetime.now()
 
@@ -155,7 +127,7 @@ if __name__ == '__main__':
     # GET CONFIGURATION PARAMETERS
     # CONFIG_FILE = 'test_configuration.yaml'
     # MODEL_DIR = '230203_1433'
-    MODEL_DIR = '230204_0120'
+    MODEL_DIR = 'bs_xyzn_bce_vf_loss(gf_RANSAC)'
 
     config_file_abs_path = os.path.join(current_project_path, 'model_save', MODEL_DIR, 'config.yaml')
     with open(config_file_abs_path) as file:
@@ -222,6 +194,8 @@ if __name__ == '__main__':
                    model_=model,
                    loss_fn_=loss_fn)
 
+    print('\n')
+
     f1_score = np.array(results[1])
     precision = np.array(results[2])
     recall = np.array(results[3])
@@ -231,11 +205,12 @@ if __name__ == '__main__':
 
     get_representative_clouds(f1_score, precision, recall, files_list)
 
-
-    print('\n\n')
-    print(f'Threshold: {THRESHOLD}')
-    print(f'Avg F1_score: {np.mean(f1_score)}')
-    print(f'Avg Precision: {np.mean(precision)}')
-    print(f'Avg Recall: {np.mean(recall)}')
-    print(f'TN: {conf_matrix[0]}, FP: {conf_matrix[1]}, FN: {conf_matrix[2]}, TP: {conf_matrix[3]}')
+    print('\n')
+    print('-'*50)
+    print('METRICS')
+    print(f'Threshold: {THRESHOLD:.5f}')
+    print(f'Avg F1_score:  {np.mean(f1_score):.3f}')
+    print(f'Avg Precision: {np.mean(precision):.3f}')
+    print(f'Avg Recall:    {np.mean(recall):.3f}')
+    print(f'TN: {conf_matrix[0]:.0f}, FP: {conf_matrix[1]:.0f}, FN: {conf_matrix[2]:.0f}, TP: {conf_matrix[3]:.0f}')
     print("Done!")

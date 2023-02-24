@@ -102,73 +102,43 @@ def compute_metrics(label_, pred_):
     trshld = compute_best_threshold(pred, label)
     pred = np.where(pred > trshld, 1, 0).astype(int)
 
-    f1_score_list = []
-    precision_list = []
-    recall_list =  []
-    tn_list = []
-    fp_list = []
-    fn_list = []
-    tp_list = []
+    f1_score = metrics.f1_score(label, pred, average='binary')
+    precision_ = metrics.precision_score(label, pred)
+    recall_ = metrics.recall_score(label, pred)
+    tn, fp, fn, tp = metrics.confusion_matrix(label, pred, labels=[0, 1]).ravel()
 
-    batch_size = np.size(pred, 0)
-    for i in range(batch_size):
-        tmp_labl = label[i]
-        tmp_pred = pred[i]
-
-        f1_score = metrics.f1_score(tmp_labl, tmp_pred, average='binary')
-        precision_ = metrics.precision_score(tmp_labl, tmp_pred)
-        recall_ = metrics.recall_score(tmp_labl, tmp_pred)
-        tn, fp, fn, tp = metrics.confusion_matrix(tmp_labl, tmp_pred, labels=[0,1]).ravel()
-
-        tn_list.append(tn)
-        fp_list.append(fp)
-        fn_list.append(fn)
-        tp_list.append(tp)
-
-        f1_score_list.append(f1_score)
-        precision_list.append(precision_)
-        recall_list.append(recall_)
-
-    avg_f1_score = np.mean(np.array(f1_score_list))
-    avg_precision = np.mean(np.array(precision_list))
-    avg_recall = np.mean(np.array(recall_list))
-    avg_tn = np.mean(np.array(tn_list))
-    avg_fp = np.mean(np.array(fp_list))
-    avg_fn = np.mean(np.array(fn_list))
-    avg_tp = np.mean(np.array(tp_list))
-
-    return trshld, pred, avg_f1_score, avg_precision, avg_recall, (avg_tn, avg_fp, avg_fn, avg_tp)
+    return trshld, pred, f1_score, precision_, recall_, (tn, fp, fn, tp)
 
 
 def compute_best_threshold(pred_, gt_):
-    trshld_per_cloud = []
+    best_threshold = 0
     method_ = THRESHOLD_METHOD
-    for cloud in range(len(pred_)):
-        if method_ == "roc":
-            fpr, tpr, thresholds = metrics.roc_curve(gt_[cloud], pred_[cloud])
-            gmeans = np.sqrt(tpr * (1 - fpr))
-            index = np.argmax(gmeans)
-            trshld_per_cloud.append(thresholds[index])
+    if method_ == "roc":
+        fpr, tpr, thresholds = metrics.roc_curve(gt_, pred_)
+        gmeans = np.sqrt(tpr * (1 - fpr))
+        index = np.argmax(gmeans)
+        best_threshold = thresholds[index]
 
-        elif method_ == "pr":
-            precision_, recall_, thresholds = metrics.precision_recall_curve(gt_[cloud], pred_[cloud])
-            f1_score_ = (2 * precision_ * recall_) / (precision_ + recall_)
-            index = np.argmax(f1_score_)
-            trshld_per_cloud.append(thresholds[index])
+    elif method_ == "pr":
+        precision_, recall_, thresholds = metrics.precision_recall_curve(gt_, pred_)
+        f1_score_ = (2 * precision_ * recall_) / (precision_ + recall_)
+        index = np.argmax(f1_score_)
+        best_threshold = thresholds[index]
 
-        elif method_ == "tuning":
-            thresholds = np.arange(0.0, 1.0, 0.0001)
-            f1_score_ = np.zeros(shape=(len(thresholds)))
-            for index, elem in enumerate(thresholds):
-                prediction_ = np.where(pred_[cloud] > elem, 1, 0).astype(int)
-                f1_score_[index] = metrics.f1_score(gt_[cloud], prediction_)
+    elif method_ == "tuning":
+        thresholds = np.arange(0.0, 1.0, 0.0001)
+        f1_score_ = np.zeros(shape=(len(thresholds)))
+        for index, elem in enumerate(thresholds):
+            prediction_ = np.where(pred_ > elem, 1, 0).astype(int)
+            f1_score_[index] = metrics.f1_score(gt_, prediction_)
 
-            index = np.argmax(f1_score_)
-            trshld_per_cloud.append(thresholds[index])
-        else:
-            print('Error in the name of the method to use for compute best threshold')
+        index = np.argmax(f1_score_)
+        best_threshold = thresholds[index]
 
-    return sum(trshld_per_cloud)/len(trshld_per_cloud)
+    else:
+        print('Error in the name of the method to use for compute best threshold')
+
+    return best_threshold
 
 
 if __name__ == '__main__':
@@ -244,14 +214,16 @@ if __name__ == '__main__':
                                    features=FEATURES,
                                    labels=LABELS,
                                    normalize=NORMALIZE,
-                                   binary=BINARY)
+                                   binary=BINARY,
+                                   compute_weights=False)
 
         if USE_VALID_DATA:
             valid_dataset = PLYDataset(root_dir=VALID_DATA,
                                        features=FEATURES,
                                        labels=LABELS,
                                        normalize=NORMALIZE,
-                                       binary=BINARY)
+                                       binary=BINARY,
+                                       compute_weights=False)
         else:
             # SPLIT VALIDATION AND TRAIN
             train_size = math.floor(len(train_dataset) * TRAIN_SPLIT)
