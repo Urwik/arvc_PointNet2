@@ -13,14 +13,14 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # IMPORTS PATH TO THE PROJECT
-current_project_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-pycharm_projects_path = os.path.dirname(current_project_path)
+current_model_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+pycharm_projects_path = os.path.dirname(os.path.dirname(current_model_path))
 # IMPORTS PATH TO OTHER PYCHARM PROJECTS
-sys.path.append(current_project_path)
+sys.path.append(current_model_path)
 sys.path.append(pycharm_projects_path)
 
 from arvc_Utils.Datasets import PLYDataset
-from models import arvc_pointnet2_bin_seg
+from model import arvc_pointnet2_bin_seg
 
 
 def train(device_, train_loader_, model_, loss_fn_, optimizer_):
@@ -171,41 +171,45 @@ def compute_best_threshold(pred_, gt_):
 
 if __name__ == '__main__':
 
-    Files = ['xyz_bceloss_pr.yaml']
+    # Files = os.listdir(os.path.join(current_model_path, 'config'))
+    Files = ['config_xyz_0.yaml',
+             'config_xyz_1.yaml',
+             'config_xyz_2.yaml',
+             'config_xyz_3.yaml',
+             'config_xyz_4.yaml',
+             'config_xyz_5.yaml',
+             'config_xyzc_0.yaml',
+             'config_xyzc_1.yaml',
+             'config_xyzc_2.yaml']
 
     for configFile in Files:
-        # HYPERPARAMETERS
         start_time = datetime.now()
 
         # --------------------------------------------------------------------------------------------#
         # GET CONFIGURATION PARAMETERS
         CONFIG_FILE = configFile
-        config_file_abs_path = os.path.join(current_project_path, 'config', CONFIG_FILE)
+        config_file_abs_path = os.path.join(current_model_path, 'config', CONFIG_FILE)
         with open(config_file_abs_path) as file:
             config = yaml.safe_load(file)
 
-        # DATASET
-        TRAIN_DIR = config["TRAIN_DIR"]
-        VALID_DIR = config["VALID_DIR"]
-        USE_VALID_DATA = config["USE_VALID_DATA"]
-        OUTPUT_DIR = config["OUTPUT_DIR"]
-        TRAIN_SPLIT = config["TRAIN_SPLIT"]
-        FEATURES = config["FEATURES"]
-        LABELS = config["LABELS"]
-        NORMALIZE = config["NORMALIZE"]
-        BINARY = config["BINARY"]
-        # THRESHOLD_METHOS POSIBILITIES = cuda:X, cpu
-        DEVICE = config["DEVICE"]
-        BATCH_SIZE = config["BATCH_SIZE"]
-        EPOCHS = config["EPOCHS"]
-        LR = config["LR"]
-        # MODEL
-        OUTPUT_CLASSES = config["OUTPUT_CLASSES"]
-        # THRESHOLD_METHOS POSIBILITIES = roc, pr, tuning
-        THRESHOLD_METHOD = config["THRESHOLD_METHOD"]
-        # TERMINATION_CRITERIA POSIBILITIES = loss, precision, f1_score
-        TERMINATION_CRITERIA = config["TERMINATION_CRITERIA"]
-        EPOCH_TIMEOUT = config["EPOCH_TIMEOUT"]
+        TRAIN_DIR= config["train"]["TRAIN_DIR"]
+        VALID_DIR= config["train"]["VALID_DIR"]
+        USE_VALID_DATA= config["train"]["USE_VALID_DATA"]
+        OUTPUT_DIR= config["train"]["OUTPUT_DIR"]
+        TRAIN_SPLIT= config["train"]["TRAIN_SPLIT"]
+        FEATURES= config["train"]["FEATURES"]
+        LABELS= config["train"]["LABELS"]
+        NORMALIZE= config["train"]["NORMALIZE"]
+        BINARY= config["train"]["BINARY"]
+        # DEVICE= config["train"]["DEVICE"]
+        DEVICE= 'cuda:0'
+        BATCH_SIZE= config["train"]["BATCH_SIZE"]
+        EPOCHS= config["train"]["EPOCHS"]
+        LR= config["train"]["LR"]
+        OUTPUT_CLASSES= config["train"]["OUTPUT_CLASSES"]
+        THRESHOLD_METHOD= config["train"]["THRESHOLD_METHOD"]
+        TERMINATION_CRITERIA= config["train"]["TERMINATION_CRITERIA"]
+        EPOCH_TIMEOUT= config["train"]["EPOCH_TIMEOUT"]
 
         # --------------------------------------------------------------------------------------------#
         # CHANGE PATH DEPENDING ON MACHINE
@@ -218,38 +222,30 @@ if __name__ == '__main__':
             VALID_DATA = os.path.join('/home/arvc/Fran/data/datasets', VALID_DIR)
         # --------------------------------------------------------------------------------------------#
         # CREATE A FOLDER TO SAVE TRAINING
-        OUT_DIR = os.path.join(current_project_path, OUTPUT_DIR)
-        input_features = ""
-        if FEATURES == [0,1,2]:
-            input_features = "xyz"
-        elif FEATURES == [0,1,2,7]:
-            input_features = "xyzc"
-        elif FEATURES == [0,1,2,4,5,6]:
-            input_features = "xyzn"
-        else:
-            input_features = "???"
-
-        folder_name = "bs" + '_' + input_features + '_' + datetime.today().strftime('%y%m%d%H%M')
+        OUT_DIR = os.path.join(current_model_path, OUTPUT_DIR)
+        folder_name = datetime.today().strftime('%y%m%d%H%M')
         OUT_DIR = os.path.join(OUT_DIR, folder_name)
         if not os.path.exists(OUT_DIR):
             os.makedirs(OUT_DIR)
 
         shutil.copyfile(config_file_abs_path, os.path.join(OUT_DIR, 'config.yaml'))
 
-        # ---------------------------------------------------------------------------------------------------------------- #
+        # ------------------------------------------------------------------------------------------------------------ #
         # INSTANCE DATASET
         train_dataset = PLYDataset(root_dir=TRAIN_DATA,
                                    features=FEATURES,
                                    labels=LABELS,
                                    normalize=NORMALIZE,
-                                   binary=BINARY)
+                                   binary=BINARY,
+                                   compute_weights=False)
 
         if USE_VALID_DATA:
             valid_dataset = PLYDataset(root_dir=VALID_DATA,
                                        features=FEATURES,
                                        labels=LABELS,
                                        normalize=NORMALIZE,
-                                       binary=BINARY)
+                                       binary=BINARY,
+                                       compute_weights=False)
         else:
             # SPLIT VALIDATION AND TRAIN
             train_size = math.floor(len(train_dataset) * TRAIN_SPLIT)
@@ -263,16 +259,20 @@ if __name__ == '__main__':
         valid_dataloader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, num_workers=10,
                                       shuffle=True, pin_memory=True, drop_last=False)
 
-        # ---------------------------------------------------------------------------------------------------------------- #
+        # ------------------------------------------------------------------------------------------------------------ #
         # SELECT MODEL
-        device = torch.device(DEVICE)
+        if torch.cuda.is_available():
+            device = torch.device(DEVICE)
+        else:
+            device = torch.device("cpu")
+
         model = arvc_pointnet2_bin_seg.get_model(num_classes=OUTPUT_CLASSES,
-                                                 n_feat=len(FEATURES)).to(device)
+                                                 n_feat=len(FEATURES), dropout_=True).to(device)
         loss_fn = torch.nn.BCELoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 
-        # ---------------------------------------------------------------------------------------------------------------- #
-        # --- TRAIN LOOP ------------------------------------------------------------------------------------------------- #
+        # ------------------------------------------------------------------------------------------------------------ #
+        # --- TRAIN LOOP --------------------------------------------------------------------------------------------- #
         print('TRAINING ON: ', device)
         epoch_timeout_count = 0
 

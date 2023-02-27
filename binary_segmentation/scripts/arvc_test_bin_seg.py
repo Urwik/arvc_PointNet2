@@ -169,13 +169,13 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------------------------#
     # GET CONFIGURATION PARAMETERS
     # models_list = ['bs_xyz_bce_vt_loss']
-    models_list = os.listdir(os.path.join(current_model_path, 'trained_models'))
+    models_list = os.listdir(os.path.join(current_model_path, 'saved_models'))
 
     for MODEL_DIR in models_list:
 
-        MODEL_PATH = os.path.join(current_model_path, 'trained_models', MODEL_DIR)
+        MODEL_PATH = os.path.join(current_model_path, 'saved_models', MODEL_DIR)
 
-        config_file_abs_path = os.path.join(current_model_path, 'model_save', MODEL_DIR, 'config.yaml')
+        config_file_abs_path = os.path.join(MODEL_PATH, 'config.yaml')
         with open(config_file_abs_path) as file:
             config = yaml.safe_load(file)
 
@@ -216,7 +216,7 @@ if __name__ == '__main__':
             device = torch.device("cpu")
 
         model = arvc_pointnet2_bin_seg.get_model(num_classes=OUTPUT_CLASSES,
-                                                 n_feat=len(FEATURES)).to(device)
+                                                 n_feat=len(FEATURES), dropout_=False).to(device)
         loss_fn = torch.nn.BCELoss()
 
         # MAKE DIR WHERE TO SAVE THE CLOUDS

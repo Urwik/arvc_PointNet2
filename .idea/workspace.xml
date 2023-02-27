@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="7255e2c7-ea5f-4991-aa70-0dcd9495549b" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/arvc_PointNet2.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/arvc_PointNet2.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/binary_segmentation/models/arvc_pointnet2_bin_seg.py" beforeDir="false" afterPath="$PROJECT_DIR$/binary_segmentation/model/arvc_pointnet2_bin_seg.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/binary_segmentation/models/pointnet2_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/binary_segmentation/model/pointnet2_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/binary_segmentation/scripts/arvc_test_bin_seg.py" beforeDir="false" afterPath="$PROJECT_DIR$/binary_segmentation/scripts/arvc_test_bin_seg.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/binary_segmentation/scripts/arvc_train_bin_seg.py" beforeDir="false" afterPath="$PROJECT_DIR$/binary_segmentation/scripts/arvc_train_bs_CUDA1.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/test_configuration.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/train_configuration.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/xyzCurv_bceLoss_pr.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/xyzCurv_f1_pr.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/xyzNormals_bceLoss_pr.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/xyzNormals_f1_pr.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/xyz_NLLLoss_pr.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/xyz_bceloss_pr.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/xyz_f1_pr.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/arvc_pointnet2_bin_seg.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/arvc_pointnet2_bin_seg_gf_ransac.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/pointnet2_bin_seg.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/pointnet2_utils.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/arvc_test_bin_seg.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/arvc_test_bin_seg_gf_ransac.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/arvc_train_bin_seg.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/arvc_train_bin_seg_gf_ransac.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/test_bin_seg_Pnt2_Original.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/train_bin_seg_Pnt2_Original.py" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2MBm9tg5ZFeFtkJVreXhCuzsypX" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showScratchesAndConsoles" value="false" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "last_opened_file_path": "/home/arvc/PycharmProjects/arvc_PointNet2/binary_segmentation/scripts",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/binary_segmentation/scripts" />
+      <recent name="$PROJECT_DIR$/binary_segmentation_gf_RANSAC/config" />
+      <recent name="$PROJECT_DIR$/binary_segmentation/config" />
+      <recent name="$PROJECT_DIR$/binary_segmentation" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="arvc_train_bs_CUDA1" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="arvc_PointNet2" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/binary_segmentation/scripts" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/binary_segmentation/scripts/arvc_train_bs_CUDA1.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.arvc_train_bs_CUDA1" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="7255e2c7-ea5f-4991-aa70-0dcd9495549b" name="Changes" comment="" />
+      <created>1677249202822</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1677249202822</updated>
+    </task>
+    <servers />
+  </component>
+</project>
