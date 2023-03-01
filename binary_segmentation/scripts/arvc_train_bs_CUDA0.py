@@ -255,9 +255,9 @@ if __name__ == '__main__':
 
         # INSTANCE DATALOADERS
         train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, num_workers=10,
-                                      shuffle=True, pin_memory=True, drop_last=False)
+                                      shuffle=True, pin_memory=True, drop_last=True)
         valid_dataloader = DataLoader(valid_dataset, batch_size=BATCH_SIZE, num_workers=10,
-                                      shuffle=True, pin_memory=True, drop_last=False)
+                                      shuffle=True, pin_memory=True, drop_last=True)
 
         # ------------------------------------------------------------------------------------------------------------ #
         # SELECT MODEL

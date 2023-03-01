@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import csv
 from torch.utils.data import DataLoader
 import torch
 import sklearn.metrics as metrics
@@ -12,13 +13,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # IMPORTS PATH TO THE PROJECT
-current_project_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-pycharm_projects_path = os.path.dirname(current_project_path)
+current_model_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+pycharm_projects_path = os.path.dirname(os.path.dirname(current_model_path))
 # IMPORTS PATH TO OTHER PYCHARM PROJECTS
-sys.path.append(current_project_path)
+sys.path.append(current_model_path)
 sys.path.append(pycharm_projects_path)
 
-from models import arvc_pointnet2_bin_seg
+from model import arvc_pointnet2_bin_seg_gf_ransac
 from arvc_Utils.Datasets import PLYDataset
 from arvc_Utils.pointcloudUtils import np2ply
 
@@ -120,97 +121,109 @@ def get_representative_clouds(f1_score_, precision_, recall_, files_list_):
     print(f'Max recall cloud: {files_list_[max_rec_idx]}')
     print(f'Min recall cloud: {files_list_[min_rec_idx]}')
 
+
+def export_results(f1_score_, precision_, recall_, tp_, fp_, tn_, fn_):
+    csv_file = os.path.join(current_model_path, 'results.csv')
+
+    data_list = [MODEL_DIR, FEATURES, config["train"]["LOSS"], config["train"]["TERMINATION_CRITERIA"],
+                 config["train"]["THRESHOLD_METHOD"], config["train"]["USE_VALID_DATA"],
+                 precision_, recall_, f1_score_, tp_, fp_, tn_, fn_]
+
+    with open(csv_file, 'a') as file_object:
+        writer = csv.writer(file_object)
+        writer.writerow(data_list)
+        file_object.close()
+
+
 if __name__ == '__main__':
     start_time = datetime.now()
 
     # --------------------------------------------------------------------------------------------#
     # GET CONFIGURATION PARAMETERS
-    # CONFIG_FILE = 'test_configuration.yaml'
-    # MODEL_DIR = '230203_1433'
-    MODEL_DIR = 'bs_xyzn_bce_vf_loss(gf_RANSAC)'
+    # models_list = ['bs_xyz_bce_vt_loss']
+    models_list = os.listdir(os.path.join(current_model_path, 'saved_models'))
 
-    config_file_abs_path = os.path.join(current_project_path, 'model_save', MODEL_DIR, 'config.yaml')
-    with open(config_file_abs_path) as file:
-        config = yaml.safe_load(file)
+    for MODEL_DIR in models_list:
 
-    # DATASET
-    TEST_DIR= config["test"]["TEST_DIR"]
-    FEATURES= config["FEATURES"]
-    LABELS= config["LABELS"]
-    NORMALIZE= config["NORMALIZE"]
-    BINARY= config["BINARY"]
-    # THRESHOLD_METHOS POSIBILITIES = cuda:X, cpu
-    DEVICE= config["test"]["DEVICE"]
-    BATCH_SIZE= config["test"]["BATCH_SIZE"]
-    # MODEL
-    MODEL_PATH= os.path.join(current_project_path, 'model_save', MODEL_DIR)
-    # THRESHOLD= config["THRESHOLD"]
-    OUTPUT_CLASSES= config["OUTPUT_CLASSES"]
-    # LOSS = BCELoss()
-    # RESULTS
-    SAVE_PRED_CLOUDS= config["test"]["SAVE_PRED_CLOUDS"]
-    # PRED_CLOUDS_DIR= config["test"]["PRED_CLOUDS_DIR"]
+        MODEL_PATH = os.path.join(current_model_path, 'saved_models', MODEL_DIR)
 
-    # --------------------------------------------------------------------------------------------#
-    # CHANGE PATH DEPENDING ON MACHINE
-    machine_name = socket.gethostname()
-    if machine_name == 'arvc-Desktop':
-        TEST_DATA = os.path.join('/media/arvc/data/datasets', TEST_DIR)
-    else:
-        TEST_DATA = os.path.join('/home/arvc/Fran/data/datasets', TEST_DIR)
-    # --------------------------------------------------------------------------------------------#
-    # INSTANCE DATASET
-    dataset = PLYDataset(root_dir = TEST_DATA,
-                         features= FEATURES,
-                         labels = LABELS,
-                         normalize = NORMALIZE,
-                         binary = BINARY,
-                         compute_weights=False)
+        config_file_abs_path = os.path.join(MODEL_PATH, 'config.yaml')
+        with open(config_file_abs_path) as file:
+            config = yaml.safe_load(file)
 
-    # INSTANCE DATALOADER
-    test_dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True, drop_last=False)
+        # DATASET
+        TEST_DIR = config["test"]["TEST_DIR"]
+        FEATURES = config["train"]["FEATURES"]
+        LABELS = config["train"]["LABELS"]
+        NORMALIZE = config["train"]["NORMALIZE"]
+        BINARY = config["train"]["BINARY"]
+        DEVICE = config["test"]["DEVICE"]
+        BATCH_SIZE = config["test"]["BATCH_SIZE"]
+        OUTPUT_CLASSES = config["train"]["OUTPUT_CLASSES"]
+        SAVE_PRED_CLOUDS = config["test"]["SAVE_PRED_CLOUDS"]
 
-    # SELECT DEVICE TO WORK WITH
-    device = torch.device(DEVICE)
-    model = arvc_pointnet2_bin_seg.get_model(num_classes=OUTPUT_CLASSES,
-                                             n_feat=len(FEATURES)).to(device)
-    loss_fn = torch.nn.BCELoss()
+        # --------------------------------------------------------------------------------------------#
+        # CHANGE PATH DEPENDING ON MACHINE
+        machine_name = socket.gethostname()
+        if machine_name == 'arvc-Desktop':
+            TEST_DATA = os.path.join('/media/arvc/data/datasets', TEST_DIR)
+        else:
+            TEST_DATA = os.path.join('/home/arvc/Fran/data/datasets', TEST_DIR)
+        # --------------------------------------------------------------------------------------------#
+        # INSTANCE DATASET
+        dataset = PLYDataset(root_dir = TEST_DATA,
+                             features= FEATURES,
+                             labels = LABELS,
+                             normalize = NORMALIZE,
+                             binary = BINARY,
+                             compute_weights=False)
+
+        # INSTANCE DATALOADER
+        test_dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True, drop_last=False)
+
+        # SELECT DEVICE TO WORK WITH
+        device = torch.device(DEVICE)
+        model = arvc_pointnet2_bin_seg_gf_ransac.get_model(num_classes=OUTPUT_CLASSES,
+                                                 n_feat=len(FEATURES), dropout_=False).to(device)
+        loss_fn = torch.nn.BCELoss()
 
 
-    # MAKE DIR WHERE TO SAVE THE CLOUDS
-    PRED_CLOUDS_DIR = os.path.join(MODEL_PATH, "pred_clouds")
-    if not os.path.exists(PRED_CLOUDS_DIR):
-        os.makedirs(PRED_CLOUDS_DIR)
+        # MAKE DIR WHERE TO SAVE THE CLOUDS
+        PRED_CLOUDS_DIR = os.path.join(MODEL_PATH, "pred_clouds")
+        if not os.path.exists(PRED_CLOUDS_DIR):
+            os.makedirs(PRED_CLOUDS_DIR)
 
-    # LOAD TRAINED MODEL
-    model.load_state_dict(torch.load(os.path.join(MODEL_PATH, 'best_model.pth'), map_location=device))
-    threshold = np.load(MODEL_PATH + f'/threshold.npy')
-    THRESHOLD = np.mean(threshold[-1])
+        # LOAD TRAINED MODEL
+        model.load_state_dict(torch.load(os.path.join(MODEL_PATH, 'best_model.pth'), map_location=device))
+        threshold = np.load(MODEL_PATH + f'/threshold.npy')
+        THRESHOLD = np.mean(threshold[-1])
 
-    print('-'*50)
-    print('TESTING ON: ', device)
-    results = test(device_=device,
-                   dataloader_=test_dataloader,
-                   model_=model,
-                   loss_fn_=loss_fn)
+        print('-'*50)
+        print('TESTING ON: ', device)
+        results = test(device_=device,
+                       dataloader_=test_dataloader,
+                       model_=model,
+                       loss_fn_=loss_fn)
 
-    print('\n')
+        print('\n')
 
-    f1_score = np.array(results[1])
-    precision = np.array(results[2])
-    recall = np.array(results[3])
-    confusion_matrix_list = np.array(results[4])
-    conf_matrix = np.mean(confusion_matrix_list, axis=0)
-    files_list = results[5]
+        f1_score = np.array(results[1])
+        precision = np.array(results[2])
+        recall = np.array(results[3])
+        confusion_matrix_list = np.array(results[4])
+        conf_matrix = np.mean(confusion_matrix_list, axis=0)
+        tp, fp, tn, fn = conf_matrix[3], conf_matrix[1], conf_matrix[0], conf_matrix[2]
+        files_list = results[5]
 
-    get_representative_clouds(f1_score, precision, recall, files_list)
+        get_representative_clouds(f1_score, precision, recall, files_list)
+        export_results(np.mean(f1_score), np.mean(precision), np.mean(recall), tp, fp, tn, fn)
 
-    print('\n')
-    print('-'*50)
-    print('METRICS')
-    print(f'Threshold: {THRESHOLD:.5f}')
-    print(f'Avg F1_score:  {np.mean(f1_score):.3f}')
-    print(f'Avg Precision: {np.mean(precision):.3f}')
-    print(f'Avg Recall:    {np.mean(recall):.3f}')
-    print(f'TN: {conf_matrix[0]:.0f}, FP: {conf_matrix[1]:.0f}, FN: {conf_matrix[2]:.0f}, TP: {conf_matrix[3]:.0f}')
-    print("Done!")
+        print('\n')
+        print('-'*50)
+        print('METRICS')
+        print(f'Threshold: {THRESHOLD:.5f}')
+        print(f'Avg F1_score:  {np.mean(f1_score):.3f}')
+        print(f'Avg Precision: {np.mean(precision):.3f}')
+        print(f'Avg Recall:    {np.mean(recall):.3f}')
+        print(f'TN: {conf_matrix[0]:.0f}, FP: {conf_matrix[1]:.0f}, FN: {conf_matrix[2]:.0f}, TP: {conf_matrix[3]:.0f}')
+        print("Done!")

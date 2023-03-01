@@ -245,7 +245,7 @@ if __name__ == '__main__':
         files_list = results[5]
 
         get_representative_clouds(f1_score, precision, recall, files_list)
-        export_results(np.mean(f1_score), np.mean(precision), np.mean(recall),tp,fp,tn,fn)
+        export_results(np.mean(f1_score), np.mean(precision), np.mean(recall), tp, fp, tn, fn)
 
 
         print('\n\n')

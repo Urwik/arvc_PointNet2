@@ -37,6 +37,8 @@ class get_model(nn.Module):
         # Enable dropout for training and disable for test
         if self.dropout:
             x = self.drop1(F.relu(self.bn1(self.conv1(l0_points))))
+        else:
+            x = F.relu(self.bn1(self.conv1(l0_points)))
 
         x = self.conv2(x)
         # x = F.log_softmax(x, dim=1)
