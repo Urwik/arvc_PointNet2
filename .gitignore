@@ -4,3 +4,5 @@ model_save/
 */__pycache__/
 __pycache__/
 test_results/
+saved_models/
+.idea/
