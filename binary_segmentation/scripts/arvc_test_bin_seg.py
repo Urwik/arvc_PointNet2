@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import os
 import csv
 from torch.utils.data import DataLoader
@@ -142,12 +143,33 @@ def get_representative_clouds(f1_score_, precision_, recall_, files_list_):
     max_rec_idx = list(recall_).index(max_rec.item())
     min_rec_idx = list(recall_).index(min_rec.item())
 
+    clouds = {
+        'Max_F1': [files_list_[max_f1_idx]],
+        'Min_F1': [files_list_[min_f1_idx]],
+        'Max_Pre': [files_list_[max_pre_idx]],
+        'Min_Pre': [files_list_[min_pre_idx]],
+        'Max_Rec': [files_list_[max_rec_idx]],
+        'Min_Rec': [files_list_[min_rec_idx]]
+    }
+
+    df = pd.DataFrame(clouds)
+    csv_path = os.path.join(MODEL_DIR, 'representative_clouds.csv')
+    df.to_csv(csv_path, index=False, sep=',')
+
     print(f'Max f1 cloud: {files_list_[max_f1_idx]}')
     print(f'Min f1 cloud: {files_list_[min_f1_idx]}')
     print(f'Max precision cloud: {files_list_[max_pre_idx]}')
     print(f'Min precision cloud: {files_list_[min_pre_idx]}')
     print(f'Max recall cloud: {files_list_[max_rec_idx]}')
     print(f'Min recall cloud: {files_list_[min_rec_idx]}')
+
+
+def get_exported_results():
+    csv_file = os.path.join(current_model_path, 'results.csv')
+    my_csv = pd.read_csv(csv_file)
+    exported_results = list(my_csv['MODEL_NAME'].to_numpy())
+
+    return exported_results
 
 
 def export_results(f1_score_, precision_, recall_, tp_, fp_, tn_, fn_):
@@ -167,11 +189,16 @@ if __name__ == '__main__':
     start_time = datetime.now()
 
     # --------------------------------------------------------------------------------------------#
-    # GET CONFIGURATION PARAMETERS
-    # models_list = ['bs_xyz_bce_vt_loss']
+    # REMOVE MODELS THAT ARE ALREADY EXPORTED
+    exported_models = get_exported_results()
     models_list = os.listdir(os.path.join(current_model_path, 'saved_models'))
+    for exported_model in exported_models:
+        models_list.remove(str(exported_model))
+
+    # models_list = ['bs_xyz_bce_vt_loss']
 
     for MODEL_DIR in models_list:
+        print(f'Testing Model: {MODEL_DIR}')
 
         MODEL_PATH = os.path.join(current_model_path, 'saved_models', MODEL_DIR)
 
@@ -207,7 +234,7 @@ if __name__ == '__main__':
                              compute_weights=False)
 
         # INSTANCE DATALOADER
-        test_dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True, drop_last=False)
+        test_dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, pin_memory=True, drop_last=True)
 
         # SELECT DEVICE TO WORK WITH
         if torch.cuda.is_available():
@@ -240,18 +267,20 @@ if __name__ == '__main__':
         precision = np.array(results[2])
         recall = np.array(results[3])
         confusion_matrix_list = np.array(results[4])
-        conf_matrix = np.mean(confusion_matrix_list, axis=0)
-        tp, fp, tn, fn = conf_matrix[3], conf_matrix[1], conf_matrix[0], conf_matrix[2]
+        mean_cf = np.mean(confusion_matrix_list, axis=0)
+        median_cf = np.median(confusion_matrix_list, axis=0)
+        mean_tp, mean_fp, mean_tn, mean_fn = mean_cf[3], mean_cf[1], mean_cf[0], mean_cf[2]
+        med_tp, med_fp, med_tn, med_fn = median_cf[3], median_cf[1], median_cf[0], median_cf[2]
         files_list = results[5]
 
         get_representative_clouds(f1_score, precision, recall, files_list)
-        export_results(np.mean(f1_score), np.mean(precision), np.mean(recall), tp, fp, tn, fn)
-
+        export_results(np.mean(f1_score), np.mean(precision), np.mean(recall), mean_tp, mean_fp, mean_tn, mean_fn)
 
         print('\n\n')
         print(f'Threshold: {THRESHOLD}')
-        print(f'Avg F1_score: {np.mean(f1_score)}')
-        print(f'Avg Precision: {np.mean(precision)}')
-        print(f'Avg Recall: {np.mean(recall)}')
-        print(f'TN: {conf_matrix[0]}, FP: {conf_matrix[1]}, FN: {conf_matrix[2]}, TP: {conf_matrix[3]}')
+        print(f'[Mean F1_score:  {np.mean(f1_score)}] [Median F1_score:  {np.median(f1_score)}]')
+        print(f'[Mean Precision: {np.mean(precision)}] [Median Precision: {np.median(precision)}]')
+        print(f'[Mean Recall:    {np.mean(recall)}] [Median Recall:    {np.median(recall)}]')
+        print(f'[Mean TP: {mean_tp}, FP: {mean_fp}, TN: {mean_tn}, FN: {mean_fn}] '
+              f'[Median TP: {med_tp}, FP: {med_fp}, TN: {med_tn}, FN: {med_fn}]')
         print("Done!")
