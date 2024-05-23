@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import time
 import csv
 from torch.utils.data import DataLoader
 import torch
@@ -192,10 +193,10 @@ if __name__ == '__main__':
     # REMOVE MODELS THAT ARE ALREADY EXPORTED
     exported_models = get_exported_results()
     models_list = os.listdir(os.path.join(current_model_path, 'saved_models'))
-    for exported_model in exported_models:
-        models_list.remove(str(exported_model))
+    #for exported_model in exported_models:
+    #    models_list.remove(str(exported_model))
 
-    # models_list = ['bs_xyz_bce_vt_loss']
+    models_list = ['2303021432','2303021434']
 
     for MODEL_DIR in models_list:
         print(f'Testing Model: {MODEL_DIR}')
@@ -213,6 +214,7 @@ if __name__ == '__main__':
         NORMALIZE= config["train"]["NORMALIZE"]
         BINARY= config["train"]["BINARY"]
         DEVICE= config["test"]["DEVICE"]
+        DEVICE='cuda:0'
         BATCH_SIZE= config["test"]["BATCH_SIZE"]
         OUTPUT_CLASSES= config["train"]["OUTPUT_CLASSES"]
         SAVE_PRED_CLOUDS= config["test"]["SAVE_PRED_CLOUDS"]
@@ -258,11 +260,15 @@ if __name__ == '__main__':
 
         print('-'*50)
         print('TESTING ON: ', device)
+        st_time = time.time()
         results = test(device_=device,
                        dataloader_=test_dataloader,
                        model_=model,
                        loss_fn_=loss_fn)
 
+        e_time = time.time()
+        dif = e_time - st_time
+        print('MODEL: ', MODEL_DIR, ' Time: ', dif)
         f1_score = np.array(results[1])
         precision = np.array(results[2])
         recall = np.array(results[3])
@@ -273,8 +279,8 @@ if __name__ == '__main__':
         med_tp, med_fp, med_tn, med_fn = median_cf[3], median_cf[1], median_cf[0], median_cf[2]
         files_list = results[5]
 
-        get_representative_clouds(f1_score, precision, recall, files_list)
-        export_results(np.mean(f1_score), np.mean(precision), np.mean(recall), mean_tp, mean_fp, mean_tn, mean_fn)
+        #get_representative_clouds(f1_score, precision, recall, files_list)
+        #export_results(np.mean(f1_score), np.mean(precision), np.mean(recall), mean_tp, mean_fp, mean_tn, mean_fn)
 
         print('\n\n')
         print(f'Threshold: {THRESHOLD}')
