@@ -173,12 +173,12 @@ if __name__ == '__main__':
 
     # Files = os.listdir(os.path.join(current_model_path, 'config'))
     Files = [#'config_xyzc_3.yaml',
-             # 'config_xyzc_4.yaml'#,
-             #'config_xyzc_5.yaml',
+             #'config_xyzc_4.yaml',
+             # 'config_xyzc_5.yaml',
              #'config_xyzn_0.yaml',
              #'config_xyzn_1.yaml',
-             'config_xyzn_2.yaml'#,
-             #'config_xyzn_3.yaml',
+             #'config_xyzn_2.yaml',
+             'config_xyzn_3.yaml'#,
              #'config_xyzn_4.yaml',
              #'config_xyzn_5.yaml'
             ]
@@ -203,7 +203,7 @@ if __name__ == '__main__':
         NORMALIZE= config["train"]["NORMALIZE"]
         BINARY= config["train"]["BINARY"]
         # DEVICE= config["train"]["DEVICE"]
-        DEVICE= 'cuda:1'
+        DEVICE= 'cuda:2'
         BATCH_SIZE= config["train"]["BATCH_SIZE"]
         EPOCHS= config["train"]["EPOCHS"]
         LR= config["train"]["LR"]

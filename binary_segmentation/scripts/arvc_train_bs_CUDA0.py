@@ -172,15 +172,16 @@ def compute_best_threshold(pred_, gt_):
 if __name__ == '__main__':
 
     # Files = os.listdir(os.path.join(current_model_path, 'config'))
-    Files = ['config_xyz_0.yaml',
-             'config_xyz_1.yaml',
-             'config_xyz_2.yaml',
-             'config_xyz_3.yaml',
-             'config_xyz_4.yaml',
-             'config_xyz_5.yaml',
-             'config_xyzc_0.yaml',
-             'config_xyzc_1.yaml',
-             'config_xyzc_2.yaml']
+    Files = [#'config_xyzc_3.yaml'#,
+             #'config_xyzc_4.yaml',
+             #'config_xyzc_5.yaml',
+             #'config_xyzn_0.yaml',
+             'config_xyzn_1.yaml',
+             #'config_xyzn_2.yaml',
+             #'config_xyzn_3.yaml',
+             #'config_xyzn_4.yaml',
+             'config_xyzn_5.yaml'
+            ]
 
     for configFile in Files:
         start_time = datetime.now()
@@ -264,6 +265,7 @@ if __name__ == '__main__':
         if torch.cuda.is_available():
             device = torch.device(DEVICE)
         else:
+            print("CUDA NOT AVAILABLE")
             device = torch.device("cpu")
 
         model = arvc_pointnet2_bin_seg.get_model(num_classes=OUTPUT_CLASSES,
